@@ -11,7 +11,7 @@ const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'kelompok4@gmail.com',
     password: process.env.DB_PASS || '',
-    database: process.env.DB_NAME || 'cloudcomputing2'
+    database: process.env.DB_NAME || 'cc2'
 });
 
 db.connect(err => {
