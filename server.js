@@ -8,7 +8,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Koneksi ke database
 const db = mysql.createConnection({
-    host: process.env.DB_HOST || 'kelompok4.mysql.database.azure.com',
+    host: process.env.DB_HOST || 'cc2.mysql.database.azure.com',
     user: process.env.DB_USER || 'praktik1@kelompok4',
     password: process.env.DB_PASS || 'praktik-1',
     database: process.env.DB_NAME || 'cc2'
