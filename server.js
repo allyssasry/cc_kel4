@@ -9,7 +9,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Koneksi ke database
 const db = mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
+    user: process.env.DB_USER || 'kelompok4@gmail.com',
     password: process.env.DB_PASS || '',
     database: process.env.DB_NAME || 'cloudcomputing2'
 });
