@@ -1,17 +1,23 @@
 const express = require('express');
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const bodyParser = require('body-parser');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(express.static('public'));
 
-// Koneksi ke database
+// Koneksi ke database Azure dengan SSL
 const db = mysql.createConnection({
-    host: process.env.DB_HOST || 'cc2.mysql.database.azure.com',
-    user: process.env.DB_USER || 'praktik1@cc2',
-    password: process.env.DB_PASS || 'praktik-1',
-    database: process.env.DB_NAME || 'cc2'
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    ssl: {
+        ca: fs.readFileSync('./DigiCertGlobalRootCA.crt.pem')
+    }
 });
 
 db.connect(err => {
@@ -22,9 +28,7 @@ db.connect(err => {
     }
 });
 
-app.use(express.static('public'));
-
-// Route halaman utama
+// Halaman utama
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -33,7 +37,7 @@ app.get('/', (req, res) => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Home</title>
-            <link rel="stylesheet" href="/styles.css"> <!-- Panggil CSS -->
+            <link rel="stylesheet" href="/styles.css">
         </head>
         <body>
             <h1>Hello, Saya Allyssa</h1>
@@ -46,8 +50,7 @@ app.get('/', (req, res) => {
     `);
 });
 
-
-// Route form input
+// Form input
 app.get('/form', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -78,10 +81,9 @@ app.get('/form', (req, res) => {
     `);
 });
 
-// Route untuk menangani form submission (FIX "Cannot POST /form")
+// Submit form
 app.post('/form', (req, res) => {
     const { name, email } = req.body;
-
     if (!name || !email) {
         return res.send('Nama dan email harus diisi!');
     }
@@ -92,9 +94,6 @@ app.post('/form', (req, res) => {
             console.error('Gagal menyimpan data:', err);
             return res.send('Gagal menyimpan data.');
         }
-        console.log('Data berhasil disimpan:', result);
-        
-        // Menampilkan pesan sukses setelah submit
         res.send(`
             <!DOCTYPE html>
             <html lang="id">
@@ -102,74 +101,72 @@ app.post('/form', (req, res) => {
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Terima Kasih</title>
-                <link rel="stylesheet" href="/styles.css">
                 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
             </head>
-            <body>
-                    <style>body { background-color: #ADD8E6; }</style>
+            <body style="background-color: #ADD8E6;">
+                <div class="container mt-5 text-center">
                     <h2>Terima kasih, ${name}!</h2>
                     <p>Data Anda telah disimpan.</p>
-                    <div class="btn-container">
                     <a href="/form" class="btn btn-primary mt-3">Kembali ke Form</a>
                     <a href="/data" class="btn btn-success mt-3">Lihat Data</a>
-                    </div>
+                </div>
             </body>
-
             </html>
         `);
     });
 });
 
-
-// Menampilkan data dari database
+// Tampilkan data
 app.get('/data', (req, res) => {
     const sql = "SELECT * FROM users";
-    
     db.query(sql, (err, results) => {
         if (err) {
             console.error('Gagal mengambil data:', err);
-            res.send('Gagal mengambil data.');
-        } else {
-            let html = `
-                <!DOCTYPE html>
-                <html lang="id">
-                <head>
-                    <meta charset="UTF-8">
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                    <title>Data Pengguna</title>
-                    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-                    <style>body { background-color: #ADD8E6; }</style>
-                </head>
-                <body class="container mt-5">
-                    <h2 class="text-center">Data Pengguna</h2>
-                    <table class="table table-striped mt-3">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nama</th>
-                                <th>Email</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-            results.forEach(user => {
-                html += `
-                    <tr>
-                        <td>${user.id}</td>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                    </tr>
-                `;
-            });
-            html += `
-                        </tbody>
-                    </table>
-                    <a href="/" class="btn btn-secondary">Kembali</a>
-                </body>
-                </html>
-            `;
-            res.send(html);
+            return res.send('Gagal mengambil data.');
         }
+
+        let html = `
+            <!DOCTYPE html>
+            <html lang="id">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Data Pengguna</title>
+                <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+                <style>body { background-color: #ADD8E6; }</style>
+            </head>
+            <body class="container mt-5">
+                <h2 class="text-center">Data Pengguna</h2>
+                <table class="table table-striped mt-3">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Email</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        results.forEach(user => {
+            html += `
+                <tr>
+                    <td>${user.id}</td>
+                    <td>${user.name}</td>
+                    <td>${user.email}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+                <a href="/" class="btn btn-secondary">Kembali</a>
+            </body>
+            </html>
+        `;
+
+        res.send(html);
     });
 });
 
