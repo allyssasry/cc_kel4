@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const bodyParser = require('body-parser');
 const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -10,15 +11,17 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Koneksi ke database Azure dengan SSL
+
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
     ssl: {
-        ca: fs.readFileSync('./DigiCertGlobalRootCA.crt.pem')
+        ca: fs.readFileSync(path.join(__dirname, 'certs', 'DigiCertGlobalRootCA.crt.pem'))
     }
 });
+
 
 db.connect(err => {
     if (err) {
@@ -84,6 +87,9 @@ app.get('/form', (req, res) => {
 // Submit form
 app.post('/form', (req, res) => {
     const { name, email } = req.body;
+
+    console.log('Data diterima:', name, email); // 🟡 Tambahan log biar kelihatan
+
     if (!name || !email) {
         return res.send('Nama dan email harus diisi!');
     }
